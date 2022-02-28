@@ -3,9 +3,19 @@
 " ============================================================================
 " TODO there are two level when zf reback the cwd when the zf path ,
 " from cwd to the path
-let s:savedCwd = ""
-function s:stashCwd()
-  let s:savedCwd = getcwd()
+
+let s:savedCwd = ["","","","",""]
+
+function s:stashCwd(tabnr)
+  let s:savedCwd[a:tabnr - 1] = getcwd()
+endfunction
+
+function s:getStashCwd(tabnr)
+  return s:savedCwd[a:tabnr - 1]
+endfunction
+
+function s:clearStashCwd(tabnr)
+  let s:savedCwd[a:tabnr - 1] = ""
 
 endfunction
 function s:getzlua() 
@@ -31,6 +41,7 @@ function! ZComp(ArgLead, CmdLine, CursorPos)
 endfunction
 
 function s:dozFunc(mode,path)
+  echo(s:savedCwd)
   if(a:mode == "tab")
     execute "tabnew"
     execute "tcd ".a:path
@@ -44,29 +55,31 @@ function s:dozFunc(mode,path)
 endfunction
 
 function! ZFunc(mode,...)
-  " TODO get all the path in the current path
   let l:list = []
   let l:index = []
   let l:params = copy(a:000)
-  if ( a:mode == "fwd" )
-    if (s:savedCwd == "")
-      call s:stashCwd()
-    endi
-    let l:list = systemlist("fd . ".s:savedCwd." -t directory")
-    if(len(l:params) == 0)
-      call s:dozFunc(a:mode,s:savedCwd)
-      return
-    endif
-    let l:params = insert(l:params,s:savedCwd)
-  else
-    let l:list = s:getzlua()
-    let s:savedCwd = ""
-  endif
+  let l:tabnr = tabpagenr()
   if(len(l:params) == 1)
     if(match(l:params[0],'[\x7E]')>= 0)
       call s:dozFunc(a:mode,l:params[0])
       return
     endif
+  endif
+  if ( a:mode == "fwd" )
+    let l:savedCwd = s:getStashCwd(l:tabnr)
+    if (l:savedCwd == "")
+      call s:stashCwd(l:tabnr)
+      let l:savedCwd = s:getStashCwd(l:tabnr)
+    endif
+    let l:list = systemlist("fd . ".l:savedCwd." -t directory")
+    if(len(l:params) == 0)
+      call s:dozFunc(a:mode,l:savedCwd)
+      return
+    endif
+    let l:params = insert(l:params,l:savedCwd)
+  else
+    let l:list = s:getzlua()
+    call s:clearStashCwd(l:tabnr)
   endif
   for i in range(0,len(l:list)-1) 
     let flag = 0
