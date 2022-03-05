@@ -41,7 +41,6 @@ function! ZComp(ArgLead, CmdLine, CursorPos)
 endfunction
 
 function s:dozFunc(mode,path)
-  echo(s:savedCwd)
   if(a:mode == "tab")
     execute "tabnew"
     execute "tcd ".a:path
