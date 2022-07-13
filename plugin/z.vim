@@ -65,17 +65,13 @@ function! ZFunc(mode,...)
     endif
   endif
   if ( a:mode == "fwd" )
-    let l:savedCwd = s:getStashCwd(l:tabnr)
-    if (l:savedCwd == "")
-      call s:stashCwd(l:tabnr)
-      let l:savedCwd = s:getStashCwd(l:tabnr)
-    endif
+    let rootPath = system("git rev-parse --show-toplevel")
+    let l:savedCwd = rootPath
     let l:list = systemlist("fd . ".l:savedCwd." -t directory")
     if(len(l:params) == 0)
       call s:dozFunc(a:mode,l:savedCwd)
       return
     endif
-    let l:params = insert(l:params,l:savedCwd)
   else
     let l:list = s:getzlua()
     call s:clearStashCwd(l:tabnr)
